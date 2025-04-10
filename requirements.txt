@@ -41,3 +41,5 @@ urllib3==2.1.0
 wheel==0.45.1
 wrapt==1.17.2
 gunicorn
+fastapi
+uvicorn
