@@ -1,15 +1,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import joblib
-import pandas as pd
 
 app = FastAPI()
 
-# Load the model
-model = joblib.load("model.pkl")  # make sure this path is correct
-
-# Define input schema based on your dataset
-class TransactionInput(BaseModel):
+# Define the structure of incoming transaction data
+class Transaction(BaseModel):
     transactionId: str
     amount: float
     location: str
@@ -22,12 +17,18 @@ class TransactionInput(BaseModel):
     staticRuleStatus: str
     reviewRequired: str
 
-@app.post("/predict")
-async def predict(input: TransactionInput):
-    # Convert input to DataFrame
-    data = pd.DataFrame([input.dict()])
-    
-    # Predict using the model
-    prediction = model.predict(data)[0]
+@app.get("/")
+def read_root():
+    return {"message": "Fraud Detection API is up and running!"}
 
-    return {"prediction": int(prediction)}
+@app.post("/predict")
+async def predict(transaction: Transaction):
+    # Convert the received transaction to a dictionary
+    data = transaction.dict()
+
+    # TODO: Load and use your ML model to make a prediction here
+    # For now, return the received data and dummy prediction
+    return {
+        "prediction": "Not Fraud",  # Replace this with actual model output
+        "received_data": data
+    }
