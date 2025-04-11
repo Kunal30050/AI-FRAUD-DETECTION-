@@ -1,34 +1,48 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+import joblib
+import numpy as np
+import os
 
 app = FastAPI()
 
-# Define the structure of incoming transaction data
-class Transaction(BaseModel):
-    transactionId: str
-    amount: float
-    location: str
-    userId: str
-    transactionDate: str
-    paymentType: str
-    userRiskScore: int
-    deviceId: str
-    ipAddress: str
-    staticRuleStatus: str
-    reviewRequired: str
+# Allow CORS (for testing or frontend integration)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Load model on startup
+model_path = os.path.join(os.path.dirname(__file__), "model.pkl")
+model = joblib.load(model_path)
 
 @app.get("/")
 def read_root():
-    return {"message": "Fraud Detection API is up and running!"}
+    return {"message": "AI Fraud Detection is Live 🎉"}
 
 @app.post("/predict")
-async def predict(transaction: Transaction):
-    # Convert the received transaction to a dictionary
-    data = transaction.dict()
+async def predict(request: Request):
+    data = await request.json()
 
-    # TODO: Load and use your ML model to make a prediction here
-    # For now, return the received data and dummy prediction
+    # Extract relevant features for the model
+    features = [
+        data["amount"],
+        data["userRiskScore"],
+        # Add more fields in the order expected by your model
+    ]
+
+    # Convert to array and reshape
+    input_data = np.array(features).reshape(1, -1)
+
+    # Make prediction
+    prediction = model.predict(input_data)[0]
+
+    label = "Fraud" if prediction == 1 else "Not Fraud"
+
     return {
-        "prediction": "Not Fraud",  # Replace this with actual model output
+        "prediction": label,
         "received_data": data
     }
